@@ -30,11 +30,22 @@ export default class MainGame extends Phaser.Scene {
     symbols = [];
     isProcessing = false;
     gameContainer = null;
+    gameBackContainer = null;
+    backContainer = null;
+    uiContainer = null;
     maskGraphics = null;
+    bg = null;
+    bgScale = 1;
+    bgItemScale = 1;
+    fieldScale = 1;
 
     preload() {
         this.load.atlas("items", "assets/zeus1.png", "assets/zeus1.json");
-        this.load.image("reel", "assets/table.png");
+        this.load.image("table", "assets/table.png");
+        this.load.image("tframe", "assets/table_ram.png");
+        this.load.image("bg", "assets/background.jpg");
+        this.load.image("zeus", "assets/zimage.png");
+        this.load.image("pillar", "assets/stolb.png");
     }
 
     create() {
@@ -45,11 +56,47 @@ export default class MainGame extends Phaser.Scene {
             this,
             this.maskGraphics
         );
+        
         this.maskGraphics.setVisible(false); // саму маску не рисуем
+
+        
+        this.bgScale = this.scale.width>this.scale.height?this.scale.width/1920:this.scale.height/1920;
+        //this.bgItemScale = this.scale.width<this.scale.height?this.scale.width/1920:this.scale.height/1920;
+        this.bgItemScale = this.scale.height/1220;
+        this.fieldScale = this.scale.width<this.scale.height?this.scale.width/(GRID_OFFSET_X*2+CELL_SIZE*COLS):this.scale.height/(GRID_OFFSET_Y*2+CELL_SIZE*ROWS);
+        this.bg = this.add.sprite(this.scale.width/2,this.scale.height/2,'bg').setOrigin(0.5,0.5).setScale(this.bgScale);
+
+        
+        this.backContainer = this.add.container();
+
+        console.log("SCR",this.scale.width,this.scale.height)
+        if (this.scale.width>this.scale.height)
+        {
+            const pill1 = this.add.sprite(20,this.scale.height/2,'pillar').setOrigin(0,0.5).setScale(this.bgItemScale);
+            this.backContainer.add(pill1);
+            const pill2 = this.add.sprite(this.scale.width-20,this.scale.height/2,'pillar').setOrigin(1,0.5).setScale(this.bgItemScale);
+            this.backContainer.add(pill2);
+            const zImage = this.add.sprite(this.scale.width-40,this.scale.height/2,'zeus').setOrigin(1,0.5).setScale(this.bgItemScale*0.8);
+            this.backContainer.add(zImage);
+        }
+
+        this.gameBackContainer = this.add.container();
+        const cellsBack = this.add.sprite(GRID_OFFSET_X,GRID_OFFSET_Y-5,'table').setScale(0.25,0.33).setOrigin(0,0);
+        this.gameBackContainer.add(cellsBack);
 
         // === КОНТЕЙНЕР ДЛЯ СИМВОЛОВ ===
         this.gameContainer = this.add.container();
         this.gameContainer.setMask(mask);
+
+        this.uiContainer = this.add.container();
+
+        const cellsFrame = this.add.sprite(GRID_OFFSET_X-20,GRID_OFFSET_Y-25,'tframe').setScale(0.25,0.32).setOrigin(0);
+        this.uiContainer.add(cellsFrame);
+
+        this.gameBackContainer.setScale(this.fieldScale);
+        this.gameContainer.setScale(this.fieldScale);
+        this.uiContainer.setScale(this.fieldScale);
+        this.maskGraphics.setScale(this.fieldScale);
 
         // === КНОПКА ===
         const restartButton = this.add
@@ -64,6 +111,8 @@ export default class MainGame extends Phaser.Scene {
             })
             .setOrigin(0.5);
 
+        this.uiContainer.add(restartButton);
+
         this.anims.create({
             key: "frame_gem",
             frames: [
@@ -77,6 +126,7 @@ export default class MainGame extends Phaser.Scene {
                 { key: "items", frame: "frames/tile007.png" },
             ],
             frameRate: 15,
+            repeat: 2,
         });
 
         this.anims.create({
@@ -262,18 +312,34 @@ export default class MainGame extends Phaser.Scene {
                 "frames/tile000.png"
             );
             effect.setScale(sym.scale * 1.8);
+
+
             effect.play("frame_gem");
             this.gameContainer.add(effect);
 
             effect.on("animationcomplete", () => {
                 effect.destroy();
-                sym.setVisible(false);
 
+            });
+
+            this.tweens.add({
+                targets: sym,
+                scale: 0.35,
+                duration: 300,
+                ease: "Power2",
+                yoyo: true,
+                onComplete: ()=>{
+                    sym.setVisible(false);
+                }
+            });
+
+            
+            this.time.delayedCall(400, () => {
                 const effectBoom = this.add.sprite(
                     sym.x,
                     sym.y,
                     "items",
-                    "boom/000.png"
+                    "boom/001.png"
                 );
                 effectBoom.setScale(sym.scale * 1.8);
                 effectBoom.play("boom_gem");
