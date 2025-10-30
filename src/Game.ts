@@ -32,11 +32,19 @@ export default class MainGame extends Phaser.Scene {
     grid = []; // grid[row][col] = sprite
     symbols = [];
     isProcessing = false;
+    isMoving = false;
     gameContainer = null;
     gameBackContainer = null;
     backContainer = null;
     uiContainer = null;
     maskGraphics = null;
+    cashoutBtn = null;
+    spinBtn = null;
+    betBtn = null;
+    downloadBtn = null;
+    endTitle = null;
+    imageZeus = null;
+
     gameStep = 0;
     bg = null;
     bgScale = 1;
@@ -50,6 +58,7 @@ export default class MainGame extends Phaser.Scene {
         this.load.image("bg", "assets/background.jpg");
         this.load.image("zeus", "assets/zimage.png");
         this.load.image("pillar", "assets/stolb.png");
+        this.load.image("x100", "assets/sphere100x.png");
     }
 
     create() {
@@ -68,11 +77,11 @@ export default class MainGame extends Phaser.Scene {
                 ? this.scale.width / 1920
                 : this.scale.height / 1920;
         //this.bgItemScale = this.scale.width<this.scale.height?this.scale.width/1920:this.scale.height/1920;
-        this.bgItemScale = this.scale.height / 1220;
+        this.bgItemScale = this.scale.height / 1400;
         this.fieldScale =
             this.scale.width < this.scale.height
-                ? this.scale.width / (GRID_OFFSET_X * 2 + CELL_SIZE_W * COLS)
-                : this.scale.height / (GRID_OFFSET_Y * 2 + CELL_SIZE * ROWS);
+                ? this.scale.width / (GRID_OFFSET_X * 2 + CELL_SIZE_W * COLS+100)
+                : this.scale.height / (GRID_OFFSET_Y * 2 + CELL_SIZE * ROWS+100);
         this.bg = this.add
             .sprite(this.scale.width / 2, this.scale.height / 2, "bg")
             .setOrigin(0.5, 0.5)
@@ -80,23 +89,53 @@ export default class MainGame extends Phaser.Scene {
 
         this.backContainer = this.add.container();
 
+        this.anims.create({
+            key: "fire",
+            frames: [
+                { key: "items", frame: "fire/001.png" },
+                { key: "items", frame: "fire/002.png" },
+                { key: "items", frame: "fire/003.png" },
+                { key: "items", frame: "fire/004.png" },
+                { key: "items", frame: "fire/005.png" },
+                { key: "items", frame: "fire/006.png" },
+                { key: "items", frame: "fire/007.png" },
+                { key: "items", frame: "fire/008.png" },
+                { key: "items", frame: "fire/009.png" },
+                { key: "items", frame: "fire/010.png" },
+                { key: "items", frame: "fire/011.png" },
+                { key: "items", frame: "fire/012.png" },
+            ],
+            frameRate: 6,
+            repeat: -1,
+        });
+
+
         console.log("SCR", this.scale.width, this.scale.height);
         if (this.scale.width > this.scale.height) {
+
+            const fire1 = this.add.sprite(20+120*this.bgItemScale,this.scale.height/2-400*this.bgItemScale,'items','fire/001.png').setOrigin(0.5,1);
+            fire1.play("fire");
+            this.backContainer.add(fire1);
+
+            const fire2 = this.add.sprite(this.scale.width - 20-140*this.bgItemScale,this.scale.height/2-400*this.bgItemScale,'items','fire/001.png').setOrigin(0.5,1);
+            fire2.play("fire");
+            this.backContainer.add(fire2);
+
             const pill1 = this.add
-                .sprite(20, this.scale.height / 2, "pillar")
-                .setOrigin(0, 0.5)
+                .sprite(20+140*this.bgItemScale, this.scale.height / 2+20, "pillar")
+                .setOrigin(0.5, 0.5)
                 .setScale(this.bgItemScale);
             this.backContainer.add(pill1);
             const pill2 = this.add
-                .sprite(this.scale.width - 20, this.scale.height / 2, "pillar")
-                .setOrigin(1, 0.5)
+                .sprite(this.scale.width - 20-140*this.bgItemScale, this.scale.height / 2+20, "pillar")
+                .setOrigin(0.5, 0.5)
                 .setScale(this.bgItemScale);
             this.backContainer.add(pill2);
-            const zImage = this.add
+            this.imageZeus = this.add
                 .sprite(this.scale.width - 40, this.scale.height / 2, "zeus")
                 .setOrigin(1, 0.5)
                 .setScale(this.bgItemScale * 0.8);
-            this.backContainer.add(zImage);
+            this.backContainer.add(this.imageZeus);
         }
 
         this.gameBackContainer = this.add.container();
@@ -123,24 +162,53 @@ export default class MainGame extends Phaser.Scene {
         this.uiContainer.setScale(this.fieldScale);
         this.maskGraphics.setScale(this.fieldScale);
 
-        const restartButton = this.add
-            .rectangle(100, 50, 160, 50, 0x44cc44)
-            .setInteractive({ useHandCursor: true })
+        this.spinBtn = this.add
+            .sprite(
+                GRID_OFFSET_X + COLS * CELL_SIZE_W - CELL_SIZE_W / 2,
+                GRID_OFFSET_Y + ROWS * CELL_SIZE + CELL_SIZE / 2,
+                "items",
+                "button1.png"
+            )
+            .setScale(0.5)
+            .setInteractive()
             .on("pointerdown", () => {
-                if (this.gameStep < MATHCES.length)
-                    this.startNewGame(MATHCES[this.gameStep]);
-                else alert("final");
+                
+                if (!this.isMoving) {
+                    console.log("click", this.gameStep);
+                    if (this.gameStep < MATHCES.length)
+                        this.startNewGame(MATHCES[this.gameStep]);
+                    else alert("final");
+                }
             });
 
-        this.add
-            .text(100, 50, "Новая игра", {
-                fontSize: "20px",
-                color: "#fff",
-                align: "center",
-            })
-            .setOrigin(0.5);
+        this.cashoutBtn = this.add
+            .sprite(
+                GRID_OFFSET_X + (COLS+1) * CELL_SIZE_W/2,
+                GRID_OFFSET_Y + ROWS * CELL_SIZE + 66,
+                "items",
+                "cash out.png"
+            )
+            .setScale(0.45)
+            .setInteractive()
+            .on("pointerdown", () => {
+                
+                
+            });
 
-        this.uiContainer.add(restartButton);
+        this.betBtn = this.add
+            .sprite(
+                GRID_OFFSET_X,
+                GRID_OFFSET_Y + ROWS * CELL_SIZE+20,
+                "items",
+                "bet.png"
+            )
+            .setOrigin(0,0)
+            .setScale(0.4)
+            
+
+        this.uiContainer.add(this.spinBtn);
+        this.uiContainer.add(this.betBtn);
+        this.uiContainer.add(this.cashoutBtn);
 
         this.anims.create({
             key: "frame_gem",
@@ -186,7 +254,7 @@ export default class MainGame extends Phaser.Scene {
         });
 
         // Запуск первой игры
-        this.startNewGame(MATHCES[this.gameStep]);
+        
     }
 
     startNewGame(arr) {
@@ -195,7 +263,8 @@ export default class MainGame extends Phaser.Scene {
 
         // Удаляем старые символы с анимацией
         if (this.symbols.length > 0) {
-            this.slideDownAll.call(this, () => {
+            this.slideDownAll(() => {
+                console.log("aa",arr);
                 this.resetGame(arr);
             });
         } else {
@@ -309,20 +378,34 @@ export default class MainGame extends Phaser.Scene {
     resetGame(targetCounts = []) {
         const totalCells = ROWS * COLS;
         this.gameStep += 1;
+        this.isMoving = true;
 
         // 1. Определяем, сколько клеток уже занято "фиксированными" типами
         let fixedTotal = 0;
-        const effectiveCounts: number[] = [];
+        let effectiveCounts= [];
 
         for (let type = 0; type < SYMBOL_TYPES; type++) {
             const desired = targetCounts[type];
             const count =
                 typeof desired === "number" && desired >= 0 ? desired : null;
             effectiveCounts[type] = count;
+
             if (count !== null) {
                 fixedTotal += count;
             }
         }
+
+        if (this.gameStep == 2)
+        {
+            effectiveCounts = [null, null, null, null, null, null, null, 8, null]
+        }
+
+        if (this.gameStep == 4)
+        {
+            effectiveCounts = [null, null, null, null, null, 9, null, null,9]
+        }
+
+        console.log("EFF",effectiveCounts);
 
         if (fixedTotal > totalCells) {
             console.error(
@@ -404,13 +487,25 @@ export default class MainGame extends Phaser.Scene {
             index++;
         }
 
+        let isX100 = false;
+
         // 6. Создаём спрайты
         for (const { row, col, type } of assigned) {
             const x = GRID_OFFSET_X + col * CELL_SIZE_W + CELL_SIZE_W / 2;
             const y = -100 - row * 30; // старт выше экрана
-            const symbol = this.add
+
+
+            let symbol = this.add
                 .sprite(x, y, "items", "gems/" + ITEM_NAMES[type])
                 .setScale(0.3);
+
+            if (!isX100 && type == ITEM_NAMES.length-1 && this.gameStep==5)
+            {
+                symbol = this.add
+                .sprite(x, y, "x100")
+                .setScale(0.3);
+                isX100 = true;
+            }
 
             symbol.setData("type", type);
             symbol.setData("row", row);
@@ -505,13 +600,18 @@ export default class MainGame extends Phaser.Scene {
             }
         }
 
+        
         if (toRemove.size === 0) {
             // Нет совпадений — завершаем игру через паузу
+            this.isMoving = false;
+            /*
             this.time.delayedCall(500, () => {
                 this.slideDownAll();
             });
+            */
             return;
         }
+        
 
         // Удаляем выигрышные
         this.isProcessing = true;
@@ -596,19 +696,25 @@ export default class MainGame extends Phaser.Scene {
         }
     }
 
-    slideDownAll() {
+    slideDownAll(onEnd) {
         this.symbols.forEach((sym) => {
             this.tweens.add({
                 targets: sym,
                 y: GRID_OFFSET_Y + CELL_SIZE * ROWS + 100,
                 duration: 1000,
                 ease: "Power2",
+                
             });
         });
         this.symbols = [];
         this.grid = Array(ROWS)
             .fill()
             .map(() => Array(COLS).fill(null));
+
+        this.time.delayedCall(1000, () => {
+                onEnd();
+        });    
+
     }
 
     update() {}
