@@ -6,6 +6,7 @@ const COLS = 6;
 const ROWS = 5;
 const SYMBOL_TYPES = 9;
 const CELL_SIZE = 80;
+const CELL_SIZE_W = 105;
 const GRID_OFFSET_X = 100;
 const GRID_OFFSET_Y = 100;
 const ITEM_NAMES = [
@@ -20,10 +21,12 @@ const ITEM_NAMES = [
     "yellow_gems.png",
 ];
 
-const maskWidth = COLS * CELL_SIZE;
+const maskWidth = COLS * CELL_SIZE_W;
 const maskHeight = ROWS * CELL_SIZE;
 const maskX = GRID_OFFSET_X;
 const maskY = GRID_OFFSET_Y;
+
+const MATHCES = [[9], [8], [7], [8, 9], [9, 9]];
 
 export default class MainGame extends Phaser.Scene {
     grid = []; // grid[row][col] = sprite
@@ -34,6 +37,7 @@ export default class MainGame extends Phaser.Scene {
     backContainer = null;
     uiContainer = null;
     maskGraphics = null;
+    gameStep = 0;
     bg = null;
     bgScale = 1;
     bgItemScale = 1;
@@ -56,32 +60,50 @@ export default class MainGame extends Phaser.Scene {
             this,
             this.maskGraphics
         );
-        
+
         this.maskGraphics.setVisible(false); // саму маску не рисуем
 
-        
-        this.bgScale = this.scale.width>this.scale.height?this.scale.width/1920:this.scale.height/1920;
+        this.bgScale =
+            this.scale.width > this.scale.height
+                ? this.scale.width / 1920
+                : this.scale.height / 1920;
         //this.bgItemScale = this.scale.width<this.scale.height?this.scale.width/1920:this.scale.height/1920;
-        this.bgItemScale = this.scale.height/1220;
-        this.fieldScale = this.scale.width<this.scale.height?this.scale.width/(GRID_OFFSET_X*2+CELL_SIZE*COLS):this.scale.height/(GRID_OFFSET_Y*2+CELL_SIZE*ROWS);
-        this.bg = this.add.sprite(this.scale.width/2,this.scale.height/2,'bg').setOrigin(0.5,0.5).setScale(this.bgScale);
+        this.bgItemScale = this.scale.height / 1220;
+        this.fieldScale =
+            this.scale.width < this.scale.height
+                ? this.scale.width / (GRID_OFFSET_X * 2 + CELL_SIZE_W * COLS)
+                : this.scale.height / (GRID_OFFSET_Y * 2 + CELL_SIZE * ROWS);
+        this.bg = this.add
+            .sprite(this.scale.width / 2, this.scale.height / 2, "bg")
+            .setOrigin(0.5, 0.5)
+            .setScale(this.bgScale);
 
-        
         this.backContainer = this.add.container();
 
-        console.log("SCR",this.scale.width,this.scale.height)
-        if (this.scale.width>this.scale.height)
-        {
-            const pill1 = this.add.sprite(20,this.scale.height/2,'pillar').setOrigin(0,0.5).setScale(this.bgItemScale);
+        console.log("SCR", this.scale.width, this.scale.height);
+        if (this.scale.width > this.scale.height) {
+            const pill1 = this.add
+                .sprite(20, this.scale.height / 2, "pillar")
+                .setOrigin(0, 0.5)
+                .setScale(this.bgItemScale);
             this.backContainer.add(pill1);
-            const pill2 = this.add.sprite(this.scale.width-20,this.scale.height/2,'pillar').setOrigin(1,0.5).setScale(this.bgItemScale);
+            const pill2 = this.add
+                .sprite(this.scale.width - 20, this.scale.height / 2, "pillar")
+                .setOrigin(1, 0.5)
+                .setScale(this.bgItemScale);
             this.backContainer.add(pill2);
-            const zImage = this.add.sprite(this.scale.width-40,this.scale.height/2,'zeus').setOrigin(1,0.5).setScale(this.bgItemScale*0.8);
+            const zImage = this.add
+                .sprite(this.scale.width - 40, this.scale.height / 2, "zeus")
+                .setOrigin(1, 0.5)
+                .setScale(this.bgItemScale * 0.8);
             this.backContainer.add(zImage);
         }
 
         this.gameBackContainer = this.add.container();
-        const cellsBack = this.add.sprite(GRID_OFFSET_X,GRID_OFFSET_Y-5,'table').setScale(0.25,0.33).setOrigin(0,0);
+        const cellsBack = this.add
+            .sprite(GRID_OFFSET_X, GRID_OFFSET_Y - 5, "table")
+            .setScale(0.33, 0.33)
+            .setOrigin(0, 0);
         this.gameBackContainer.add(cellsBack);
 
         // === КОНТЕЙНЕР ДЛЯ СИМВОЛОВ ===
@@ -90,7 +112,10 @@ export default class MainGame extends Phaser.Scene {
 
         this.uiContainer = this.add.container();
 
-        const cellsFrame = this.add.sprite(GRID_OFFSET_X-20,GRID_OFFSET_Y-25,'tframe').setScale(0.25,0.32).setOrigin(0);
+        const cellsFrame = this.add
+            .sprite(GRID_OFFSET_X - 20, GRID_OFFSET_Y - 30, "tframe")
+            .setScale(0.325, 0.325)
+            .setOrigin(0);
         this.uiContainer.add(cellsFrame);
 
         this.gameBackContainer.setScale(this.fieldScale);
@@ -98,11 +123,15 @@ export default class MainGame extends Phaser.Scene {
         this.uiContainer.setScale(this.fieldScale);
         this.maskGraphics.setScale(this.fieldScale);
 
-        // === КНОПКА ===
         const restartButton = this.add
             .rectangle(100, 50, 160, 50, 0x44cc44)
             .setInteractive({ useHandCursor: true })
-            .on("pointerdown", () => this.startNewGame.call(this));
+            .on("pointerdown", () => {
+                if (this.gameStep < MATHCES.length)
+                    this.startNewGame(MATHCES[this.gameStep]);
+                else alert("final");
+            });
+
         this.add
             .text(100, 50, "Новая игра", {
                 fontSize: "20px",
@@ -157,36 +186,105 @@ export default class MainGame extends Phaser.Scene {
         });
 
         // Запуск первой игры
-        this.startNewGame.call(this);
+        this.startNewGame(MATHCES[this.gameStep]);
     }
 
-    startNewGame() {
+    startNewGame(arr) {
         if (this.isProcessing) return;
         this.isProcessing = true;
 
         // Удаляем старые символы с анимацией
         if (this.symbols.length > 0) {
             this.slideDownAll.call(this, () => {
-                this.resetGame.call(this);
+                this.resetGame(arr);
             });
         } else {
-            this.resetGame.call(this);
+            this.resetGame(arr);
         }
     }
 
-    resetGame() {
+    // Вспомогательная функция: выбрать тип, у которого сейчас < maxCount на поле
+    getSafeType(maxCount = 7) {
+        const counts = this.getTypeCounts(); // подсчёт текущих типов
+        const candidates = Object.keys(counts)
+            .map(Number)
+            .filter((type) => counts[type] < maxCount);
+
+        // Если все типы уже по 8 — разрешаем любой (редкий крайний случай)
+        if (candidates.length === 0) {
+            return Phaser.Math.Between(0, SYMBOL_TYPES - 1);
+        }
+
+        // Выбираем случайный из допустимых
+        return Phaser.Utils.Array.GetRandom(candidates);
+    }
+
+    // Подсчёт количества каждого типа на поле
+    getTypeCounts() {
+        const counts: { [key: number]: number } = {};
+        for (let row = 0; row < ROWS; row++) {
+            for (let col = 0; col < COLS; col++) {
+                const cell = this.grid[row][col];
+                if (cell) {
+                    const type = cell.getData("type");
+                    counts[type] = (counts[type] || 0) + 1;
+                }
+            }
+        }
+        return counts;
+    }
+
+    /*
+    resetGame(N) {
         // Очистка
         this.grid = Array(ROWS)
             .fill()
             .map(() => Array(COLS).fill(null));
         this.symbols = [];
 
-        // Создаём новые символы ВНЕ ЭКРАНА (сверху)
-        for (let col = 0; col < COLS; col++) {
-            for (let row = 0; row < ROWS; row++) {
-                const type = Phaser.Math.Between(0, SYMBOL_TYPES - 1);
-                const x = GRID_OFFSET_X + col * CELL_SIZE + CELL_SIZE / 2;
-                const y = -100 - row * 30; // старт выше
+        // Шаг 1: выбрать "особый" тип для N элементов
+        const specialType = Phaser.Math.Between(0, SYMBOL_TYPES - 1);
+
+        console.log("SP",N,specialType);
+
+        // Шаг 2: сгенерировать N позиций для specialType
+        const allPositions = [];
+
+        for (let row = 0; row < ROWS; row++) {
+            for (let col = 0; col < COLS; col++) {
+                allPositions.push({ row, col });
+            }
+        }
+
+        Phaser.Utils.Array.Shuffle(allPositions);
+        const specialPositions = allPositions.slice(0, N);
+        const specialSet = new Set(
+            specialPositions.map((p) => `${p.row},${p.col}`)
+        );
+
+        // Шаг 3: заполнить поле
+        for (let row = 0; row < ROWS; row++) {
+            for (let col = 0; col < COLS; col++) {
+
+                let type: number;
+                if (specialSet.has(`${row},${col}`)) {
+                    type = specialType;
+                } else {
+                    // Выбираем тип, который пока < 8 (и не обязательно specialType)
+                    // Но specialType уже имеет N ≥8, поэтому он исключён из safe-выбора
+                    const counts = {}; // временный подсчёт (можно оптимизировать, но для сброса — ок)
+                    // На этапе генерации мы ещё не добавили символы, кроме specialType,
+                    // поэтому просто избегаем specialType, если N >= 8
+                    let tries = 0;
+                    do {
+                        type = Phaser.Math.Between(0, SYMBOL_TYPES - 1);
+                        tries++;
+                    } while (type === specialType && N >= 8 && tries < 100);
+                    // Если N < 8 — можно оставить и specialType, но по условию N ≥8, так что ок.
+                }
+
+                const x = GRID_OFFSET_X + col * CELL_SIZE_W + CELL_SIZE_W / 2;
+                const y = -100 - row * 30;
                 const symbol = this.add
                     .sprite(x, y, "items", "gems/" + ITEM_NAMES[type])
                     .setScale(0.3);
@@ -201,19 +299,147 @@ export default class MainGame extends Phaser.Scene {
         }
 
         // Падение
-        this.dropSymbols.call(this, () => {
+        this.dropSymbols(() => {
             this.isProcessing = false;
-            this.checkMatches.call(this);
+            this.checkMatches();
+        });
+    }
+        */
+
+    resetGame(targetCounts = []) {
+        const totalCells = ROWS * COLS;
+        this.gameStep += 1;
+
+        // 1. Определяем, сколько клеток уже занято "фиксированными" типами
+        let fixedTotal = 0;
+        const effectiveCounts: number[] = [];
+
+        for (let type = 0; type < SYMBOL_TYPES; type++) {
+            const desired = targetCounts[type];
+            const count =
+                typeof desired === "number" && desired >= 0 ? desired : null;
+            effectiveCounts[type] = count;
+            if (count !== null) {
+                fixedTotal += count;
+            }
+        }
+
+        if (fixedTotal > totalCells) {
+            console.error(
+                `resetGame: суммарное количество фиксированных символов (${fixedTotal}) превышает размер поля (${totalCells})`
+            );
+            // Можно уменьшить или обрезать — здесь просто обрежем до лимита
+            // Но лучше бросить ошибку или нормализовать. Для простоты — нормализуем позже.
+        }
+
+        // 2. Очистка поля
+        this.grid = Array(ROWS)
+            .fill()
+            .map(() => Array(COLS).fill(null));
+        this.symbols = [];
+
+        // 3. Генерируем список всех позиций
+        const allPositions = [];
+        for (let row = 0; row < ROWS; row++) {
+            for (let col = 0; col < COLS; col++) {
+                allPositions.push({ row, col });
+            }
+        }
+        Phaser.Utils.Array.Shuffle(allPositions);
+
+        // 4. Распределяем фиксированные типы
+        let index = 0;
+        const assigned: { row: number; col: number; type: number }[] = [];
+
+        for (let type = 0; type < SYMBOL_TYPES; type++) {
+            const count = effectiveCounts[type];
+            if (count !== null) {
+                for (let i = 0; i < count && index < allPositions.length; i++) {
+                    assigned.push({ ...allPositions[index], type });
+                    index++;
+                }
+            }
+        }
+
+        // 5. Оставшиеся клетки заполняем "свободными" типами (≤8 штук на тип)
+        // Сначала посчитаем, сколько уже назначено для каждого типа
+        const currentCounts: number[] = new Array(SYMBOL_TYPES).fill(0);
+        for (const item of assigned) {
+            currentCounts[item.type]++;
+        }
+
+        // Теперь заполним остаток
+        while (index < allPositions.length) {
+            const pos = allPositions[index];
+
+            // Выбираем тип, который:
+            // - либо не фиксирован (effectiveCounts[type] === null)
+            // - либо фиксирован, но мы ещё не превысили его лимит (маловероятно, но на всякий)
+            // И при этом currentCounts[type] < 8
+            const candidates = [];
+            for (let type = 0; type < SYMBOL_TYPES; type++) {
+                const isFixed = effectiveCounts[type] !== null;
+                const current = currentCounts[type];
+                const limit = isFixed ? effectiveCounts[type]! : 8;
+
+                if (current < limit) {
+                    candidates.push(type);
+                }
+            }
+
+            if (candidates.length === 0) {
+                // Крайний случай: всё заполнено до лимита — просто берём любой тип
+                console.warn(
+                    "Нет доступных типов для заполнения — используем случайный"
+                );
+                const type = Phaser.Math.Between(0, SYMBOL_TYPES - 1);
+                assigned.push({ ...pos, type });
+                currentCounts[type]++;
+            } else {
+                const type = Phaser.Utils.Array.GetRandom(candidates);
+                assigned.push({ ...pos, type });
+                currentCounts[type]++;
+            }
+
+            index++;
+        }
+
+        // 6. Создаём спрайты
+        for (const { row, col, type } of assigned) {
+            const x = GRID_OFFSET_X + col * CELL_SIZE_W + CELL_SIZE_W / 2;
+            const y = -100 - row * 30; // старт выше экрана
+            const symbol = this.add
+                .sprite(x, y, "items", "gems/" + ITEM_NAMES[type])
+                .setScale(0.3);
+
+            symbol.setData("type", type);
+            symbol.setData("row", row);
+            symbol.setData("col", col);
+            this.grid[row][col] = symbol;
+            this.gameContainer.add(symbol);
+            this.symbols.push(symbol);
+        }
+
+        // 7. Падение
+        this.dropSymbols(() => {
+            this.isProcessing = false;
+            this.checkMatches();
         });
     }
 
     spawnNewSymbols() {
+        // Подсчитываем текущие количества
+        const counts = this.getTypeCounts();
+
         for (let col = 0; col < COLS; col++) {
             for (let row = 0; row < ROWS; row++) {
                 if (!this.grid[row][col]) {
-                    const type = Phaser.Math.Between(0, SYMBOL_TYPES - 1);
-                    const x = GRID_OFFSET_X + col * CELL_SIZE + CELL_SIZE / 2;
-                    const y = -100 - row * (CELL_SIZE + 10); // Начинаем выше экрана
+                    // Выбираем тип, у которого < 8
+                    const type = this.getSafeType(7); // гарантирует counts[type] < 8
+
+                    const x =
+                        GRID_OFFSET_X + col * CELL_SIZE_W + CELL_SIZE_W / 2;
+                    const y = -100 - row * (CELL_SIZE + 10);
                     const symbol = this.add
                         .sprite(x, y, "items", "gems/" + ITEM_NAMES[type])
                         .setScale(0.3);
@@ -229,6 +455,7 @@ export default class MainGame extends Phaser.Scene {
         }
     }
 
+    // dropSymbols остаётся без изменений, но можно оставить как есть
     dropSymbols(onComplete) {
         this.isProcessing = true;
         let drops = 0;
@@ -255,36 +482,24 @@ export default class MainGame extends Phaser.Scene {
 
         const toRemove = new Set();
 
-        // Поиск 2x2 блоков
-        for (let row = 0; row < ROWS - 1; row++) {
-            for (let col = 0; col < COLS - 1; col++) {
-                const a = this.grid[row][col];
-                const b = this.grid[row][col + 1];
-                const c = this.grid[row + 1][col];
-                const d = this.grid[row + 1][col + 1];
-
-                /*
-            if (a && b && c && d) {
-                const type = a.getData('type');
-                if (
-                    b.getData('type') === type &&
-                    c.getData('type') === type &&
-                    d.getData('type') === type
-                ) {
-                    toRemove.add(a);
-                    toRemove.add(b);
-                    toRemove.add(c);
-                    toRemove.add(d);
+        const typeCounts = {};
+        for (let row = 0; row < ROWS; row++) {
+            for (let col = 0; col < COLS; col++) {
+                const cell = this.grid[row][col];
+                if (cell) {
+                    const type = cell.getData("type");
+                    typeCounts[type] = (typeCounts[type] || 0) + 1;
                 }
             }
-                */
+        }
 
-                if (a && b) {
-                    const type = a.getData("type");
-
-                    if (b.getData("type") === type) {
-                        toRemove.add(a);
-                        toRemove.add(b);
+        for (let row = 0; row < ROWS; row++) {
+            for (let col = 0; col < COLS; col++) {
+                const cell = this.grid[row][col];
+                if (cell) {
+                    const type = cell.getData("type");
+                    if (typeCounts[type] >= 8) {
+                        toRemove.add(cell);
                     }
                 }
             }
@@ -313,13 +528,11 @@ export default class MainGame extends Phaser.Scene {
             );
             effect.setScale(sym.scale * 1.8);
 
-
             effect.play("frame_gem");
             this.gameContainer.add(effect);
 
             effect.on("animationcomplete", () => {
                 effect.destroy();
-
             });
 
             this.tweens.add({
@@ -328,12 +541,11 @@ export default class MainGame extends Phaser.Scene {
                 duration: 300,
                 ease: "Power2",
                 yoyo: true,
-                onComplete: ()=>{
+                onComplete: () => {
                     sym.setVisible(false);
-                }
+                },
             });
 
-            
             this.time.delayedCall(400, () => {
                 const effectBoom = this.add.sprite(
                     sym.x,
@@ -345,7 +557,7 @@ export default class MainGame extends Phaser.Scene {
                 effectBoom.play("boom_gem");
                 this.gameContainer.add(effectBoom);
 
-                effectBoom.on("animationcomplete",()=>{
+                effectBoom.on("animationcomplete", () => {
                     effectBoom.destroy();
                 });
             });
