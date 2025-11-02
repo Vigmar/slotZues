@@ -817,9 +817,9 @@ export default class MainGame extends Phaser.Scene {
         this.backContainer.remove(this.imageZeus);
         this.uiContainer.add(this.imageZeus);
 
-        this.imageZeus.x = (this.scale.width * 3) / 4;
-        this.imageZeus.y = this.scale.height / 2;
-        this.imageZeus.setOrigin(0.5, 0.5);
+        this.imageZeus.x = COLS*CELL_SIZE_W*3/4;
+        this.imageZeus.y = GRID_OFFSET_Y+ROWS*CELL_SIZE/2;
+        this.imageZeus.setOrigin(0.25, 0.5);
         this.imageZeus.setScale(0.5);
 
         const zeusY = this.imageZeus.y;
