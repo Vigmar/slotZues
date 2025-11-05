@@ -26,8 +26,9 @@ const maskHeight = ROWS * CELL_SIZE;
 const maskX = GRID_OFFSET_X;
 const maskY = GRID_OFFSET_Y;
 
-const MATHCES = [[9], [8], [7], [8, 9], [9, 9]];
+const MATHCES = [[6,6,6,6,6,6,6], [9], [8], [7,6,6,6,4], [8, 9], [9, 9]];
 const PUSH_NAMES = [
+    "",
     "push250.png",
     "",
     "push-200.png",
@@ -35,6 +36,7 @@ const PUSH_NAMES = [
     "push5000.png",
 ];
 const BONUS_NAMES = [
+    "",
     "win_256.png",
     "bonus_free_spin.png",
     "",
@@ -42,7 +44,7 @@ const BONUS_NAMES = [
     "win_5000.png",
 ];
 
-const BET_COUNT = [0, 250, 250, 820, 620, 5620];
+const BET_COUNT = [0, 0, 250, 250, 820, 620, 5620];
 
 export default class MainGame extends Phaser.Scene {
     grid = []; // grid[row][col] = sprite
@@ -72,6 +74,8 @@ export default class MainGame extends Phaser.Scene {
     bonusSprite = null;
     endEffect = null;
     endSprite = null;
+    soundIcon = null;
+    ambSound = null;
 
     gameStep = 0;
     bg = null;
@@ -83,6 +87,11 @@ export default class MainGame extends Phaser.Scene {
     shiftY = 0;
 
     preload() {
+        this.load.audio("lose", "sounds/lose.mp3");
+        this.load.audio("win", "sounds/win.mp3");
+        this.load.audio("click", "sounds/click.mp3");
+        this.load.audio("ambient", "sounds/ambient.mp3");
+
         this.load.atlas("items", "assets/zeus1.png", "assets/zeus1.json");
         this.load.image("table", "assets/table.png");
         this.load.image("tframe", "assets/table_ram.png");
@@ -246,6 +255,7 @@ export default class MainGame extends Phaser.Scene {
             .setInteractive()
             .on("pointerdown", () => {
                 if (!this.isMoving) {
+                    this.sound.play("click");
                     this.startEndScreen();
                 }
             });
@@ -333,16 +343,32 @@ export default class MainGame extends Phaser.Scene {
             frameRate: 15,
         });
 
+        this.ambSound = this.sound.add("ambient");
+
         this.scale.on("resize", this.resizeGame, this);
         this.resizeGame();
 
         // Запуск первой игры
-        this.startNewGame(MATHCES[0]);
+        //this.startNewGame(MATHCES[0]);
+        this.resetGame();
+
+        this.ambSound.play({
+            loop: true,
+        });
     }
 
     startNewGame(arr) {
         if (this.isProcessing) return;
         this.isProcessing = true;
+
+        //if (this.isSoundEnable)
+
+        if (this.gameStep == 3) {
+            this.sound.play("lose");
+        } else if (this.gameStep == 0) {
+        } else {
+            this.sound.play("win");
+        }
 
         // Удаляем старые символы с анимацией
         if (this.symbols.length > 0) {
@@ -629,6 +655,8 @@ export default class MainGame extends Phaser.Scene {
                 this.slideDownAll();
             });
             */
+           if (this.gameStep ==3)
+            this.startPushes();
             return;
         }
 
@@ -739,23 +767,10 @@ export default class MainGame extends Phaser.Scene {
     update() {}
 
     startPushes() {
-        if (BONUS_NAMES[this.gameStep]) {
-            this.bonusSprite.setTexture("items", BONUS_NAMES[this.gameStep]);
-            this.bonusSprite.setScale(0);
 
-            this.tweens.add({
-                targets: this.bonusSprite,
-                scale: 0.8,
-                duration: 700,
-                ease: "Power2",
-                yoyo: true,
-                onComplete: () => {
-                    this.bonusSprite.setScale(0);
-                },
-            });
-        }
 
         if (PUSH_NAMES[this.gameStep]) {
+            console.log(this.gameStep,PUSH_NAMES[this.gameStep]);
             this.pushSprite.setTexture("items", PUSH_NAMES[this.gameStep]);
 
             const pushScale =
@@ -779,7 +794,26 @@ export default class MainGame extends Phaser.Scene {
                 },
             });
         }
+    
 
+
+        if (BONUS_NAMES[this.gameStep]) {
+            this.bonusSprite.setTexture("items", BONUS_NAMES[this.gameStep]);
+            this.bonusSprite.setScale(0);
+
+            this.tweens.add({
+                targets: this.bonusSprite,
+                scale: 0.8,
+                duration: 700,
+                ease: "Power2",
+                yoyo: true,
+                onComplete: () => {
+                    this.bonusSprite.setScale(0);
+                },
+            });
+        }
+
+        
         //this.betCount = this.createRouletteCounter(0,0, 0.22, BET_COUNT[this.gameStep-1], BET_COUNT[this.gameStep], 500);
         this.betCount.destroy();
         this.betCount = this.createRouletteCounter(
@@ -802,30 +836,39 @@ export default class MainGame extends Phaser.Scene {
         this.gameContainer.setVisible(false);
         this.cellsFrame.setVisible(false);
 
-
-        this.endEffect = this.add.sprite(COLS*CELL_SIZE_W/2,GRID_OFFSET_Y+ROWS*CELL_SIZE/2-20,'endeffect').setOrigin(0.5,1).setScale(0.7);
+        this.endEffect = this.add
+            .sprite(
+                (COLS * CELL_SIZE_W) / 2,
+                GRID_OFFSET_Y + (ROWS * CELL_SIZE) / 2 - 20,
+                "endeffect"
+            )
+            .setOrigin(0.5, 1)
+            .setScale(0.7);
         this.uiContainer.add(this.endEffect);
 
-        this.endSprite = this.add.sprite(COLS*CELL_SIZE_W/2,GRID_OFFSET_Y+ROWS*CELL_SIZE/2,'endbtn').setOrigin(0.5,0.5).setScale(0.4);
+        this.endSprite = this.add
+            .sprite(
+                (COLS * CELL_SIZE_W) / 2,
+                GRID_OFFSET_Y + (ROWS * CELL_SIZE) / 2,
+                "endbtn"
+            )
+            .setOrigin(0.5, 0.5)
+            .setScale(0.4);
         this.uiContainer.add(this.endSprite);
-
-
 
         this.tweenZeus.stop();
 
-        
         this.backContainer.remove(this.imageZeus);
         this.uiContainer.add(this.imageZeus);
 
-        this.imageZeus.x = COLS*CELL_SIZE_W*3/4;
-        this.imageZeus.y = GRID_OFFSET_Y+ROWS*CELL_SIZE/2;
+        this.imageZeus.x = (COLS * CELL_SIZE_W * 3) / 4;
+        this.imageZeus.y = GRID_OFFSET_Y + (ROWS * CELL_SIZE) / 2;
         this.imageZeus.setOrigin(0.25, 0.5);
         this.imageZeus.setScale(0.5);
 
         const zeusY = this.imageZeus.y;
 
         if (this.tweenZeus) this.tweenZeus.stop();
-
 
         this.tweenZeus = this.tweens.add({
             targets: this.imageZeus,
