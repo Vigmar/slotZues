@@ -1,19 +1,20 @@
-import Phaser from 'phaser'
+import Phaser from "phaser";
 
-import MainGame from './Game'
+import MainGame from "./Game";
 
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 800,
-	parent: 'phaser-example',
-	backgroundColor: '#ffffff',
+    parent: "phaser-example",
+    backgroundColor: "#ffffff",
     scene: [MainGame],
-	scale: {
-		mode: Phaser.Scale.RESIZE,  
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-        
-	}   
-}
+    roundPixels: true,
+    width: 1920,
+    height: 1920,
+    scale: {
+        mode: Phaser.Scale.SHOW_ALL,
+        //autoCenter: Phaser.Scale.CENTER_BOTH,
+	},
+};
 
-export default new Phaser.Game(config)
+export default new Phaser.Game(config);
+
